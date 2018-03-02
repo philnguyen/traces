@@ -18,9 +18,16 @@ raco pkg install traces
 ### Examples
 
 ```racket
-#lang typed/racket/base
+#lang racket/base
 (require racket/set
          traces)
-(function-traces (λ ([x : Integer]) (set (+ 1 x) (+ 2 x))) 1)
-;; You should see a graph showing up
+         
+(function-traces (λ (x) (set (+ 1 x) (+ 2 x))) 1)
+;; A graph should show up
+
+(hash-traces (hash 'a {set 'b 'c}
+                   'b {set 'a 'c}
+                   'c {set 'd})
+             'a)
+;; Another graph should show up
 ```
