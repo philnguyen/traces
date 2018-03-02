@@ -41,6 +41,7 @@ before_script:
 script:
   - cd traces
   - raco pkg install --deps search-auto
+  - raco test test.rkt
 
 # NOTE: If your repo is a Racket package with an info.rkt that
 # includes some `deps`, the following is more elegant:
