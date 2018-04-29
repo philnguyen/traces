@@ -13,11 +13,11 @@
 (define-language MT)
 
 (define (function->reduction f)
-  (reduction-relation MT
-   [--> any any_1
-        (where {_ ... any_1 _ ...} ,(set->list (f (term any))))]))
+  (let ([idx 0])
+    (reduction-relation MT
+     [--> any any_1
+          (computed-name (term any_name))
+          (where any_name ,(begin0 idx (set! idx (+ 1 idx))))
+          (where {_ ... any_1 _ ...} ,(set->list (f (term any))))])))
 
-(define (hash->reduction h)
-  (reduction-relation MT
-   [--> any any_1
-        (where {_ ... any_1 _ ...} ,(set->list (hash-ref h (term any) seteq)))]))
+(define (hash->reduction h) (function->reduction (λ (x) (hash-ref h x seteq))))
