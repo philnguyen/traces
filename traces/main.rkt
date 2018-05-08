@@ -13,7 +13,7 @@
 (define-language MT)
 
 (define (function->reduction f)
-  (let ([idx 0])
+  (let ([idx 1])
     (reduction-relation MT
      [--> any any_1
           (computed-name (term any_name))
