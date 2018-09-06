@@ -7,12 +7,21 @@
 (provide function-traces
          function-traces/tag
          hash-traces
-         hash-traces/tag)
+         hash-traces/tag
+         make-int-tagger)
 
 (define (function-traces f e) (traces (function->reduction f) e))
 (define (hash-traces     h e) (traces (hash->reduction h)     e))
-(define (function-traces/tag f e) (traces/tag f e tag-function function->reduction))
-(define (hash-traces/tag     h e) (traces/tag h e tag-hash     hash->reduction    ))
+(define (function-traces/tag f e val->tag tag->val)
+  (define (f* tag)
+    (for/seteq ([val (in-set (f (tag->val tag)))])
+      (val->tag val)))
+  (function-traces f* (val->tag e)))
+(define (hash-traces/tag h e val->tag tag->val)
+  (define h*
+    (for/hasheq ([(k vs) (in-hash h)])
+      (values (val->tag k) (for/seteq ([v (in-set vs)]) (val->tag v)))))
+  (hash-traces h* (val->tag e)))
 
 (define-language MT)
 
@@ -26,40 +35,15 @@
 
 (define (hash->reduction h) (function->reduction (λ (x) (hash-ref h x seteq))))
 
-(define (traces/tag rel val tagger rel->reduction)
-  (define-values (rel* tag-val tag->val) (tagger rel))
-  (traces (rel->reduction rel*) (tag-val val))
-  tag->val)
-
-(define (tag-function f)
-  (define val->tag (make-hash))
-  (define tag->val (make-hash))
-  (define (tag-val x)
-    (define i (hash-ref! val->tag x (λ () (hash-count val->tag))))
-    (hash-set! tag->val i x)
-    i)
-
-  ;; Compute corresponding function
-  (define ((tag-function f) tag)
-    (for/seteq ([val (in-set (f (hash-ref tag->val tag)))])
-      (tag-val val)))
-
-  (values (tag-function f) tag-val tag->val))
-
-(define (tag-hash h)
-  (define val->tag (make-hash))
-  (define (tag-val x) (hash-ref! val->tag x (λ () (hash-count val->tag))))
-
-  ;; Compute corresponding map
-  (define h*
-    (for/hasheq ([(k vs) (in-hash h)])
-      (values (tag-val k)
-              (for/seteq ([v (in-set vs)])
-                (tag-val v)))))
-
-  ;; Vector mapping tags to original values
-  (define tag->val (make-vector (hash-count val->tag)))
-  (for ([(v i) (in-hash val->tag)])
-    (vector-set! tag->val i v))
-  
-  (values h* tag-val tag->val))
+(define (make-int-tagger #:offset [offset 0] #:on-new-tag [on-new-tag! (λ (i x) (void))])
+  (define cache:val->int (make-hash))
+  (define cache:int->val (make-hasheq))
+  (define (val->int val)
+    (hash-ref! cache:val->int val
+               (λ ()
+                 (define n (+ offset (hash-count cache:val->int)))
+                 (hash-set! cache:int->val n val)
+                 (on-new-tag! n val)
+                 n)))
+  (define (int->val i) (hash-ref cache:int->val i (λ () (error 'int->val "nothing for ~a" i))))
+  (values val->int int->val))
