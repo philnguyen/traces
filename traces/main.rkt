@@ -35,13 +35,13 @@
 
 (define (hash->reduction h) (function->reduction (λ (x) (hash-ref h x seteq))))
 
-(define (make-int-tagger #:offset [offset 0] #:on-new-tag [on-new-tag! (λ (i x) (void))])
+(define (make-int-tagger #:start [start 0] #:on-new-tag [on-new-tag! (λ (i x) (void))])
   (define cache:val->int (make-hash))
   (define cache:int->val (make-hasheq))
   (define (val->int val)
     (hash-ref! cache:val->int val
                (λ ()
-                 (define n (+ offset (hash-count cache:val->int)))
+                 (define n (+ start (hash-count cache:val->int)))
                  (hash-set! cache:int->val n val)
                  (on-new-tag! n val)
                  n)))
