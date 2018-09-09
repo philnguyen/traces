@@ -2,6 +2,7 @@
 
 (require racket/set
          racket/match
+         (only-in racket/pretty pretty-format)
          redex/reduction-semantics
          redex/gui
          racket/gui/base
@@ -50,6 +51,7 @@
   (values val->int int->val))
 
 (define (show-lookup-window tag->val)
+  (define max-width 100)
   (define frame (new frame%
                      [label "Tag Lookup"]
                      [width 640]
@@ -65,22 +67,24 @@
                       (λ (_ e)
                         (case (send e get-event-type)
                           [(text-field-enter) (on-lookup)]))]))
-  (define btn (new button%
-                   [parent lookup-panel]
-                   [label "Lookup"]
-                   [callback
-                    (λ (_ e)
-                      (case (send e get-event-type)
-                        [(button) (on-lookup)]))]))
+  (define width-slider (new slider%
+                            [parent lookup-panel]
+                            [label "Column width"]
+                            [min-value 40]
+                            [max-value 200]
+                            [init-value max-width]
+                            [callback (λ _
+                                        (set! max-width (send width-slider get-value))
+                                        (on-lookup))]))
   (define content (new text-field%
                        [parent main-panel]
-                       [label "Value"]
+                       [label #f]
                        [style '(multiple)]))
   (define (on-lookup)
     (define tag (with-input-from-string (send input get-value) read))
     (match (with-handlers ([exn? (λ _ #f)])
              (list (tag->val tag)))
       [(list val)
-       (send content set-value (format "~a" val))]
-      [#f (send content set-value "(nothing)")]))
+       (send content set-value (pretty-format val max-width))]
+      [#f (send content set-value (format "(nothing for ~a)" tag))]))
   (send frame show #t))
