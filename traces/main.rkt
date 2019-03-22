@@ -17,14 +17,16 @@
 
 (define (function-traces f e) (traces (function->reduction f) e))
 (define (hash-traces     h e) (function-traces (hash->function h) e))
-(define (function-traces/tag f e [tagger (call-with-values make-int-tagger cons)])
+(define (function-traces/tag f e [tagger (call-with-values make-int-tagger cons)]
+                             #:display [val->disp values])
   (match-define (cons val->tag tag->val) tagger)
   (define (f* tag) (for/seteq ([val (in-set (f (tag->val tag)))])
                      (val->tag val)))
   (function-traces f* (val->tag e))
-  (thread (λ () (show-lookup-window tag->val))))
-(define (hash-traces/tag h e [tagger (call-with-values make-int-tagger cons)])
-  (function-traces/tag (hash->function h) e tagger))
+  (thread (λ () (show-lookup-window (compose1 val->disp tag->val)))))
+(define (hash-traces/tag h e [tagger (call-with-values make-int-tagger cons)]
+                         #:display [val->disp values])
+  (function-traces/tag (hash->function h) e tagger #:display val->disp))
 
 (define-language MT)
 
