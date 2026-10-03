@@ -2,7 +2,8 @@
 
 (define collection "traces")
 
-(define deps '("base"
+(define deps '("gui-lib"
+               "base"
                "typed-racket-lib"
                "typed-racket-more"
                "redex-gui-lib"))
